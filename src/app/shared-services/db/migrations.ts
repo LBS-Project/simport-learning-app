@@ -2,7 +2,8 @@ import { CapacitorSQLitePlugin } from '@capacitor-community/sqlite'
 
 export async function runMigrations(
   db: CapacitorSQLitePlugin,
-  migrations: string[]
+  migrations: string[],
+  dbName: string
 ) {
   const init = `CREATE TABLE IF NOT EXISTS migrations (
     version integer NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -10,7 +11,7 @@ export async function runMigrations(
   const {
     changes: { changes },
     message,
-  } = await db.execute({ statements: init })
+  } = await db.execute({ database: dbName, statements: init })
   if (changes === -1) throw new Error(`can't run DB migrations: ${message}`)
 
   const { values } = await db.query({
@@ -20,13 +21,14 @@ export async function runMigrations(
   const currentVersion = values.length ? parseInt(values[0].version, 10) : 0
 
   for (let v = currentVersion; v < migrations.length; v++)
-    await runMigration(db, migrations[v], v + 1)
+    await runMigration(db, migrations[v], v + 1, dbName)
 }
 
 export async function runMigration(
   db: CapacitorSQLitePlugin,
   migration: string,
-  targetVersion: number
+  targetVersion: number,
+  dbName: string
 ) {
   // run migration as transaction
   const set = [
@@ -42,12 +44,18 @@ export async function runMigration(
       .map((statement) => ({ statement, values: [] })),
   ]
 
-  const {
-    changes: { changes },
-    message,
-  } = await db.executeSet({ set })
-  if (changes === -1)
-    throw new Error(`DB migration to v${targetVersion} failed: ${message}`)
+  set.forEach(async (m) => {
+    const {
+      changes: { changes },
+      message,
+    } = await db.run({
+      database: dbName,
+      statement: m.statement,
+      values: m.values,
+    })
+    if (changes === -1)
+      throw new Error(`DB migration to v${targetVersion} failed: ${message}`)
+  })
 }
 
 export const MIGRATIONS = [
