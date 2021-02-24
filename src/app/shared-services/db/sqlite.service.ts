@@ -16,7 +16,9 @@ export class SqliteService {
   private db = Plugins.CapacitorSQLite
   private dbReady: Promise<void>
 
-  constructor(private platform: Platform) {}
+  private readonly DB_NAME = 'trajectories'
+
+  constructor(private platform: Platform) { }
 
   isSupported() {
     return this.platform.is('hybrid') // equivalent to android && ios
@@ -27,23 +29,33 @@ export class SqliteService {
     if (this.dbReady) return this.dbReady
     return (this.dbReady = this.isSupported()
       ? this.initDb()
-      : new Promise(() => {})) // never resolve..
+      : new Promise(() => { })) // never resolve..
   }
 
   private async initDb() {
     if (this.platform.is('android')) await CapacitorSQLite.requestPermissions()
 
+    await this.db.createConnection({
+      database: this.DB_NAME,
+      encrypted: true,
+      mode: 'secret',
+    })
+
     // TODO: ask user to provide encryption password (assuming we keep this sqlite driver..)
-    const { result, message } = await this.db.open({ database: 'trajectories' })
+    const { result, message } = await this.db.open({ database: this.DB_NAME })
     if (!result) throw new Error(`unable to open DB: ${message}`)
 
-    await runMigrations(this.db, MIGRATIONS)
+    await runMigrations(this.db, MIGRATIONS, this.DB_NAME)
   }
 
   async getAllTrajectoryMeta(): Promise<TrajectoryMeta[]> {
     await this.ensureDbReady()
     const statement = `SELECT * FROM trajectories;`
-    const { values } = await this.db.query({ statement, values: [] })
+    const { values } = await this.db.query({
+      database: this.DB_NAME,
+      statement,
+      values: []
+    })
 
     // ensure valid duration in days
     values.forEach(async (trajectoryMeta: TrajectoryMeta) => {
@@ -56,6 +68,7 @@ export class SqliteService {
         )
         trajectoryMeta.durationDays = durationDays
       }
+
     })
     return values
   }
@@ -63,6 +76,7 @@ export class SqliteService {
   async getFullTrajectory(id: string): Promise<Trajectory> {
     await this.ensureDbReady()
     const { values } = await this.db.query({
+      database: this.DB_NAME,
       statement: `SELECT t.type, t.placename, t.durationDays, p.lon, p.lat, p.time, p.accuracy FROM trajectories AS t
         LEFT JOIN points p ON t.id = p.trajectory
         WHERE t.id = ?
@@ -133,7 +147,7 @@ export class SqliteService {
     const {
       changes: { changes },
       message,
-    } = await this.db.executeSet({ set })
+    } = await this.db.executeSet({ database: this.DB_NAME, set })
     if (changes === -1) throw new Error(`couldnt insert trajectory: ${message}`)
   }
 
@@ -146,6 +160,7 @@ export class SqliteService {
       changes: { changes },
       message,
     } = await this.db.run({
+      database: this.DB_NAME,
       statement: 'INSERT OR REPLACE INTO points VALUES (?,?,?,?,?)',
       values: [trajectoryId, time, ...p.latLng, p.accuracy].map(normalize),
     })
@@ -153,12 +168,37 @@ export class SqliteService {
 
     // update durationDays of trajectory
     await this.updateDurationDaysInTrajectory(trajectoryId)
+    const {
+      values: [firstPoint],
+    } = await this.db.query({
+      database: this.DB_NAME,
+      statement:
+        'SELECT time FROM points WHERE trajectory = ? ORDER BY TIME LIMIT 1;',
+      values: [trajectoryId].map(normalize),
+    })
+
+    if (firstPoint) {
+      const durationDays = moment(time).diff(
+        moment(firstPoint.time),
+        'days',
+        true
+      )
+      await this.db.run({
+        database: this.DB_NAME,
+        statement: 'UPDATE trajectories SET durationDays = ? WHERE id = ?;',
+        values: [durationDays, trajectoryId].map(normalize),
+      })
+    }
   }
 
   async deleteTrajectory(t: TrajectoryMeta): Promise<void> {
     await this.ensureDbReady()
     const statement = `DELETE  FROM trajectories WHERE id = '${t.id}';`
-    const { changes, message } = await this.db.run({ statement, values: [] })
+    const { changes, message } = await this.db.run({
+      database: this.DB_NAME,
+      statement,
+      values: [],
+    })
     if (changes === -1) throw new Error(`couldnt delete trajectory: ${message}`)
   }
 
@@ -167,6 +207,7 @@ export class SqliteService {
   ): Promise<number> {
     // update durationDays of trajectory
     const { values } = await this.db.query({
+      database: this.DB_NAME,
       statement:
         'SELECT MIN(time) as firstPointTime, MAX(time) as lastPointTime FROM points WHERE trajectory = ?;',
       values: [trajectoryId].map(normalize),
@@ -180,6 +221,7 @@ export class SqliteService {
       true
     )
     await this.db.run({
+      database: this.DB_NAME,
       statement: 'UPDATE trajectories SET durationDays = ? WHERE id = ?;',
       values: [durationDays, trajectoryId].map(normalize),
     })
