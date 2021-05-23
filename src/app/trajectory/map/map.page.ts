@@ -80,6 +80,8 @@ export class MapPage implements OnInit, OnDestroy {
       .getOne(this.trajectoryType, this.trajectoryId)
       .subscribe((t) => {
         this.polyline = new Polyline(t.coordinates)
+        console.log(t.coordinates.length)
+        console.log(t.timestamps.length)
 
         const lastMeasurement = {
           location: t.coordinates[t.coordinates.length - 1],

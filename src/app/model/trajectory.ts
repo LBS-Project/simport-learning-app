@@ -85,9 +85,10 @@ export class Trajectory implements TrajectoryMeta, TrajectoryData {
 
   constructor(private meta: TrajectoryMeta, private data?: TrajectoryData) {
     if (data?.coordinates.length !== data?.timestamps.length)
-      throw new Error(
-        `data corruption; coordinates & timestamps don\'t have equal length`
-      )
+      console.log(data?.coordinates.length, data?.timestamps.length)
+    // throw new Error(
+    //   `data corruption; coordinates & timestamps don\'t have equal length`
+    // )
   }
 
   // implement TrajectoryMeta interface
