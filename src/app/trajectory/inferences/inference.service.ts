@@ -66,6 +66,6 @@ export class InferenceService {
       .getOne(trajectoryType, trajectoryId)
       .pipe(take(1))
       .toPromise()
-    return this.inferenceEngine.infer(traj, [RunningInference])
+    return this.inferenceEngine.inferRunning(traj, [RunningInference])
   }
 }
