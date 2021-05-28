@@ -52,9 +52,11 @@ export class MapPage implements OnInit, OnDestroy {
   showInferenceControls = false
   showHomeInferences = true
   showWorkInferences = true
+  showRunningInferences = true
   currentConfidenceThreshold = 50
   currentInferences: Inference[]
   generatedInferences = false
+  generatedRunningInferences = false
 
   // should only be used for invalidateSize(), content changes via directive bindings!
   private map: Map | undefined
@@ -171,6 +173,27 @@ export class MapPage implements OnInit, OnDestroy {
     }
   }
 
+  async showRunInferences() {
+    await this.showLoadingDialog('Loading inferences...')
+    const inferenceResult = await this.inferenceService
+      .generateRunningInferences(this.trajectoryType, this.trajectoryId)
+      .finally(async () => {
+        await this.hideLoadingDialog()
+      })
+    this.generatedRunningInferences = true
+    switch (inferenceResult.status) {
+      case InferenceResultStatus.successful:
+        this.currentInferences = inferenceResult.inferences
+        return this.updateRunningInferenceMarkers()
+      case InferenceResultStatus.tooManyCoordinates:
+        return await this.showErrorToast(
+          `Trajectory couldn't be analyzed, because it has too many coordinates`
+        )
+      default:
+        return await this.showErrorToast(`Trajectory couldn't be analyzed`)
+    }
+  }
+
   updateInferenceMarkers() {
     const inferences = this.currentInferences.filter(
       (i) =>
@@ -179,6 +202,26 @@ export class MapPage implements OnInit, OnDestroy {
         (i.confidence || 0) > this.currentConfidenceThreshold / 100.0 &&
         (this.showHomeInferences || i.type !== InferenceType.home) &&
         (this.showWorkInferences || i.type !== InferenceType.work)
+    )
+    this.inferenceMarkers.clearLayers()
+    for (const inference of inferences) {
+      const m = new Circle([inference.lonLat[1], inference.lonLat[0]], {
+        radius: inference.accuracy,
+        color: 'red',
+      })
+      m.addTo(this.inferenceMarkers).bindPopup(
+        `${inference.name} (${Math.round((inference.confidence || 0) * 100)}%)`
+      )
+    }
+  }
+
+  updateRunningInferenceMarkers() {
+    const inferences = this.currentInferences.filter(
+      (i) =>
+        i.lonLat &&
+        i.accuracy &&
+        (i.confidence || 0) > this.currentConfidenceThreshold / 100.0 &&
+        (this.showRunningInferences || i.type !== InferenceType.running)
     )
     this.inferenceMarkers.clearLayers()
     for (const inference of inferences) {
