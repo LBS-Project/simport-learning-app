@@ -60,17 +60,7 @@ export const RunningInference = new InferenceDefinition(
     `We assume your Running is at ${r.lonLat} with a confidence of ${r.confidence}.`,
   [
     {
-      type: InferenceScoringType.nightness,
-      confidence: (score) => score,
-      weight: 1,
-    },
-    {
-      type: InferenceScoringType.workHours9to5,
-      confidence: (score) => 1 - score,
-      weight: 0.75,
-    },
-    {
-      type: InferenceScoringType.pointCount,
+      type: InferenceScoringType.running,
       confidence: (score) => score,
       weight: 1,
     },

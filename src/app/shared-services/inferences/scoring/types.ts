@@ -17,10 +17,10 @@ export type InferenceScoringResult = {
 }
 
 export enum InferenceScoringType {
+  running = 'running',
   spatialVariance = 'spatialVariance',
   temporalContinuity = 'temporalContinuity',
   pointCount = 'pointCount',
   nightness = 'nightness',
   workHours9to5 = 'workHours9to5',
-  running = 'running',
 }
