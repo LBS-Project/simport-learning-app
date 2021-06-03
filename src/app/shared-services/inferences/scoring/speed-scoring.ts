@@ -1,13 +1,15 @@
+import { __core_private_testing_placeholder__ } from '@angular/core/testing'
 import { Point } from 'src/app/model/trajectory'
+import { RunningInference } from '../definitions'
 import {
   IInferenceScoring,
   InferenceScoringResult,
   InferenceScoringType,
 } from './types'
 
-export class RoadMapMatchScoring implements IInferenceScoring {
-  public type: InferenceScoringType = InferenceScoringType.running
-  private maxSpeed = 8
+export class SpeedScoring implements IInferenceScoring {
+  public type: InferenceScoringType = InferenceScoringType.speed
+  private maxSpeed = 9
   private minSpeed = 1.5
 
   score(cluster: Point[], allClusters: Point[][]): InferenceScoringResult {
