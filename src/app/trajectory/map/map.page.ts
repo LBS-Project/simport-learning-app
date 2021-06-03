@@ -12,6 +12,7 @@ import {
   Polyline,
   tileLayer,
 } from 'leaflet'
+import heatLayer from 'leaflet-heatmap'
 import { Subscription } from 'rxjs'
 import { Inference } from 'src/app/model/inference'
 import { TrajectoryType } from 'src/app/model/trajectory'
@@ -82,8 +83,6 @@ export class MapPage implements OnInit, OnDestroy {
       .getOne(this.trajectoryType, this.trajectoryId)
       .subscribe((t) => {
         this.polyline = new Polyline(t.coordinates)
-        console.log(t.coordinates.length)
-        console.log(t.timestamps.length)
 
         const lastMeasurement = {
           location: t.coordinates[t.coordinates.length - 1],
@@ -224,10 +223,19 @@ export class MapPage implements OnInit, OnDestroy {
         (this.showRunningInferences || i.type !== InferenceType.running)
     )
     this.inferenceMarkers.clearLayers()
+    console.log(inferences)
     for (const inference of inferences) {
+      let colorrunning = '#f94144'
+      if (inference.accuracy < 5) {
+        colorrunning = '#f72585'
+      } else if (inference.accuracy > 5 && inference.accuracy < 12) {
+        colorrunning = '#f8961e'
+      }
       const m = new Circle([inference.lonLat[1], inference.lonLat[0]], {
-        radius: inference.accuracy,
-        color: 'red',
+        radius: 10,
+        color: colorrunning,
+        fillColor: colorrunning,
+        fillOpacity: 1,
       })
       m.addTo(this.inferenceMarkers).bindPopup(
         `${inference.name} (${Math.round((inference.confidence || 0) * 100)}%)`
