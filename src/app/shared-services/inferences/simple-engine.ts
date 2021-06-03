@@ -10,15 +10,23 @@ import { NightnessScoring } from './scoring/nightness-scoring'
 import { IInferenceScoring, InferenceScoringResult } from './scoring/types'
 import { WorkHoursScoring } from './scoring/work-hours-scoring'
 import { PointCountScoring } from './scoring/pointcount-scoring'
+import { RoadMapMatchScoring } from './scoring/road-mapmatch-scoring'
+import { SpeedScoring } from './scoring/speed-scoring'
 
 import clustering from 'density-clustering'
 import haversine from 'haversine-distance'
+import { point } from 'leaflet'
 
 export class SimpleEngine implements IInferenceEngine {
   scorings: IInferenceScoring[] = [
     new NightnessScoring(),
     new WorkHoursScoring(),
     new PointCountScoring(),
+  ]
+
+  Runningscorings: IInferenceScoring[] = [
+    new RoadMapMatchScoring(),
+    new SpeedScoring(),
   ]
 
   private inputCoordinatesLimit = 100000
@@ -50,6 +58,55 @@ export class SimpleEngine implements IInferenceEngine {
         // by applying the scoring functions of the engine...
         const inferenceScores: InferenceScoringResult[] = []
         this.scorings.forEach((scoring) => {
+          // and then apply scorings
+          const score = scoring.score(cluster, pointClusters)
+          inferenceScores.push(score)
+        })
+        // interpret scorings
+        const inferenceResult = this.interpretInferenceScores(
+          inference,
+          inferenceScores,
+          cluster
+        )
+        if (inferenceResult !== null) {
+          inferenceResults.push(inferenceResult)
+        }
+      })
+    })
+
+    return {
+      status: InferenceResultStatus.successful,
+      inferences: inferenceResults,
+    }
+  }
+
+  inferRunning(
+    trajectory: TrajectoryData,
+    inferences: InferenceDefinition[]
+  ): InferenceResult {
+    if (trajectory.coordinates.length > this.inputCoordinatesLimit) {
+      return {
+        status: InferenceResultStatus.tooManyCoordinates,
+        inferences: [],
+      }
+    }
+    this.speed_filter(trajectory)
+    // trajectory coordinates data
+    const result = this.cluster_speed(trajectory)
+    console.log(result)
+    const pointClusters = this.indexClustersToPointClusters(
+      result.clusters,
+      trajectory
+    )
+    const inferenceResults: Inference[] = []
+
+    // for each cluster...
+    pointClusters.forEach((cluster) => {
+      // check all inferences...
+      inferences.forEach((inference) => {
+        // by applying the scoring functions of the engine...
+        const inferenceScores: InferenceScoringResult[] = []
+        this.Runningscorings.forEach((scoring) => {
           // and then apply scorings
           const score = scoring.score(cluster, pointClusters)
           inferenceScores.push(score)
@@ -148,6 +205,19 @@ export class SimpleEngine implements IInferenceEngine {
     return { clusters, noise: dbscan.noise }
   }
 
+  private cluster_speed(trajectory: TrajectoryData) {
+    const dbscan = new clustering.DBSCAN()
+    // parameters: neighborhood radius, number of points in neighborhood to form a cluster
+    const clusters = dbscan.run(
+      trajectory.coordinates,
+      9,
+      2,
+      this.computeHaversineDistance
+    )
+    console.log(clusters)
+
+    return { clusters, noise: dbscan.noise }
+  }
   private computeHaversineDistance(firstCoordinate, secondCoordinate): number {
     const a = { latitude: firstCoordinate[0], longitude: firstCoordinate[1] }
     const b = { latitude: secondCoordinate[0], longitude: secondCoordinate[1] }
@@ -173,5 +243,16 @@ export class SimpleEngine implements IInferenceEngine {
         }
       })
     })
+  }
+
+  private SpeedFilter(trajectory: TrajectoryData) {
+    //const filtered_trajectory: TrajectoryData
+    const cooridnatesRunning = []
+    const runningIndexes = []
+    for (const i in trajectory.speed) {
+      if (trajectory.speed[i] > 0 && trajectory.speed[i] < 10) {
+        console.log(i)
+      }
+    }
   }
 }
