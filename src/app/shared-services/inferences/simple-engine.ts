@@ -90,7 +90,7 @@ export class SimpleEngine implements IInferenceEngine {
         inferences: [],
       }
     }
-    this.speed_filter(trajectory)
+    this.SpeedFilter(trajectory)
     // trajectory coordinates data
     const result = this.cluster_speed(trajectory)
     console.log(result)
