@@ -32,6 +32,7 @@ export enum InferenceType {
   home = 'home',
   work = 'work',
   running = 'running',
+  speed = 'speed',
 }
 
 export enum InferenceResultStatus {

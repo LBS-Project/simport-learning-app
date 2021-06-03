@@ -18,6 +18,7 @@ export type InferenceScoringResult = {
 
 export enum InferenceScoringType {
   running = 'running',
+  speed = 'speed',
   spatialVariance = 'spatialVariance',
   temporalContinuity = 'temporalContinuity',
   pointCount = 'pointCount',

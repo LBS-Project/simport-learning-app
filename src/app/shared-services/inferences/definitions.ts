@@ -62,6 +62,11 @@ export const RunningInference = new InferenceDefinition(
     {
       type: InferenceScoringType.running,
       confidence: (score) => score,
+      weight: 0.25,
+    },
+    {
+      type: InferenceScoringType.speed,
+      confidence: (score) => score,
       weight: 1,
     },
   ]
