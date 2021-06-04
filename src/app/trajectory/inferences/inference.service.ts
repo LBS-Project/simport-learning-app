@@ -3,6 +3,7 @@ import { Inference } from 'src/app/model/inference'
 import { TrajectoryType } from 'src/app/model/trajectory'
 import {
   HomeInference,
+  RunningInference,
   WorkInference,
 } from 'src/app/shared-services/inferences/definitions'
 import { SimpleEngine } from 'src/app/shared-services/inferences/simple-engine'
@@ -56,5 +57,15 @@ export class InferenceService {
       .pipe(take(1))
       .toPromise()
     return this.inferenceEngine.infer(traj, [HomeInference, WorkInference])
+  }
+  async generateRunningInferences(
+    trajectoryType: TrajectoryType,
+    trajectoryId: string
+  ): Promise<InferenceResult> {
+    const traj = await this.trajectoryService
+      .getOne(trajectoryType, trajectoryId)
+      .pipe(take(1))
+      .toPromise()
+    return this.inferenceEngine.inferRunning(traj, [RunningInference])
   }
 }

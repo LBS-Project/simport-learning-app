@@ -52,7 +52,28 @@ export const HomeInference = new InferenceDefinition(
   ]
 )
 
+export const RunningInference = new InferenceDefinition(
+  'running',
+  InferenceType.running,
+  (lang?: string) => 'Running',
+  (r: Inference, lang?: string) =>
+    `We assume your Running is at ${r.lonLat} with a confidence of ${r.confidence}.`,
+  [
+    {
+      type: InferenceScoringType.running,
+      confidence: (score) => score,
+      weight: 0.25,
+    },
+    {
+      type: InferenceScoringType.speed,
+      confidence: (score) => score,
+      weight: 1,
+    },
+  ]
+)
+
 export const AllInferences = {
   [HomeInference.id]: HomeInference,
   [WorkInference.id]: WorkInference,
+  [RunningInference.id]: RunningInference,
 }

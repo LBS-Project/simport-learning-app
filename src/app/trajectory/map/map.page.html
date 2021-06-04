@@ -45,6 +45,13 @@
             ></ion-toggle>
             <ion-icon name="business"></ion-icon>
           </ion-item>
+          <ion-item lines="none">
+            <ion-toggle
+              [(ngModel)]="showRunningInferences"
+              (ionChange)="updateRunningInferenceMarkers()"
+            ></ion-toggle>
+            <ion-icon name="walk"></ion-icon>
+          </ion-item>
         </ion-row>
         <ion-row>
           <ion-label>Confidence {{ currentConfidenceThreshold }}%</ion-label>
@@ -92,6 +99,13 @@
         text="Create inferences"
       >
         <ion-icon name="analytics-outline"></ion-icon>
+      </ion-fab-button>
+      <ion-fab-button
+        *ngIf="!generatedRunningInferences"
+        (click)="showRunInferences()"
+        text="Running inferences"
+      >
+        <ion-icon name="walk-outline"></ion-icon>
       </ion-fab-button>
 
       <ion-fab-button

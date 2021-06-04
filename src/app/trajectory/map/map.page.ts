@@ -12,6 +12,7 @@ import {
   Polyline,
   tileLayer,
 } from 'leaflet'
+import heatLayer from 'leaflet-heatmap'
 import { Subscription } from 'rxjs'
 import { Inference } from 'src/app/model/inference'
 import { TrajectoryType } from 'src/app/model/trajectory'
@@ -52,9 +53,11 @@ export class MapPage implements OnInit, OnDestroy {
   showInferenceControls = false
   showHomeInferences = true
   showWorkInferences = true
+  showRunningInferences = true
   currentConfidenceThreshold = 50
   currentInferences: Inference[]
   generatedInferences = false
+  generatedRunningInferences = false
 
   // should only be used for invalidateSize(), content changes via directive bindings!
   private map: Map | undefined
@@ -169,6 +172,27 @@ export class MapPage implements OnInit, OnDestroy {
     }
   }
 
+  async showRunInferences() {
+    await this.showLoadingDialog('Loading inferences...')
+    const inferenceResult = await this.inferenceService
+      .generateRunningInferences(this.trajectoryType, this.trajectoryId)
+      .finally(async () => {
+        await this.hideLoadingDialog()
+      })
+    this.generatedRunningInferences = true
+    switch (inferenceResult.status) {
+      case InferenceResultStatus.successful:
+        this.currentInferences = inferenceResult.inferences
+        return this.updateRunningInferenceMarkers()
+      case InferenceResultStatus.tooManyCoordinates:
+        return await this.showErrorToast(
+          `Trajectory couldn't be analyzed, because it has too many coordinates`
+        )
+      default:
+        return await this.showErrorToast(`Trajectory couldn't be analyzed`)
+    }
+  }
+
   updateInferenceMarkers() {
     const inferences = this.currentInferences.filter(
       (i) =>
@@ -183,6 +207,35 @@ export class MapPage implements OnInit, OnDestroy {
       const m = new Circle([inference.lonLat[1], inference.lonLat[0]], {
         radius: inference.accuracy,
         color: 'red',
+      })
+      m.addTo(this.inferenceMarkers).bindPopup(
+        `${inference.name} (${Math.round((inference.confidence || 0) * 100)}%)`
+      )
+    }
+  }
+
+  updateRunningInferenceMarkers() {
+    const inferences = this.currentInferences.filter(
+      (i) =>
+        i.lonLat &&
+        i.accuracy &&
+        (i.confidence || 0) > this.currentConfidenceThreshold / 100.0 &&
+        (this.showRunningInferences || i.type !== InferenceType.running)
+    )
+    this.inferenceMarkers.clearLayers()
+    console.log(inferences)
+    for (const inference of inferences) {
+      let colorrunning = '#f94144'
+      if (inference.accuracy < 5) {
+        colorrunning = '#f72585'
+      } else if (inference.accuracy > 5 && inference.accuracy < 12) {
+        colorrunning = '#f8961e'
+      }
+      const m = new Circle([inference.lonLat[1], inference.lonLat[0]], {
+        radius: 10,
+        color: colorrunning,
+        fillColor: colorrunning,
+        fillOpacity: 1,
       })
       m.addTo(this.inferenceMarkers).bindPopup(
         `${inference.name} (${Math.round((inference.confidence || 0) * 100)}%)`

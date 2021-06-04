@@ -49,6 +49,7 @@
     "gps-to-gpx": "^1.5.1",
     "haversine-distance": "^1.2.1",
     "leaflet": "^1.7.1",
+    "leaflet-heatmap": "^1.0.0",
     "moment": "^2.29.0",
     "rxjs": "~6.5.5",
     "tslib": "^2.0.0",
