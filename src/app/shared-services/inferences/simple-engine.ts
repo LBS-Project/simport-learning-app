@@ -90,6 +90,7 @@ export class SimpleEngine implements IInferenceEngine {
         inferences: [],
       }
     }
+    
     this.SpeedFilter(trajectory)
     // trajectory coordinates data
     const result = this.cluster_speed(trajectory)
@@ -247,12 +248,19 @@ export class SimpleEngine implements IInferenceEngine {
 
   private SpeedFilter(trajectory: TrajectoryData) {
     //const filtered_trajectory: TrajectoryData
-    const cooridnatesRunning = []
-    const runningIndexes = []
-    for (const i in trajectory.speed) {
-      if (trajectory.speed[i] > 0 && trajectory.speed[i] < 10) {
-        console.log(i)
+    let n = 0
+    let x = 0
+    let listTodelete = []
+    
+    for (var i of trajectory.speed) {
+      if (i < 2.5 || i > 9) {
+       listTodelete.push(x) ;x += 1}
+      else{
+        x += 1
+      } 
       }
-    }
+    
+      for (var index of listTodelete){trajectory.speed.splice(index-n,1) ;trajectory.coordinates.splice(index-n,1); n+=1
+      }; console.log(trajectory.speed)
   }
 }
