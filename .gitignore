@@ -32,3 +32,4 @@ npm-debug.log*
 
 # do not commit test-data for now
 src/app/shared-services/inferences/test-data/*
+/src/assets/trajectories/3384596.json
