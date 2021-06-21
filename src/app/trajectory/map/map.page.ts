@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core'
+import { ChangeDetectorRef, Component, ComponentFactoryResolver, OnDestroy, OnInit } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { LoadingController, ToastController } from '@ionic/angular'
 import {
@@ -214,7 +214,10 @@ export class MapPage implements OnInit, OnDestroy {
     }
   }
 
+
   updateRunningInferenceMarkers() {
+    let locations= [];
+
     const inferences = this.currentInferences.filter(
       (i) =>
         i.lonLat &&
@@ -223,24 +226,44 @@ export class MapPage implements OnInit, OnDestroy {
         (this.showRunningInferences || i.type !== InferenceType.running)
     )
     this.inferenceMarkers.clearLayers()
-    console.log(inferences)
-    for (const inference of inferences) {
-      let colorrunning = '#f94144'
-      if (inference.accuracy < 5) {
-        colorrunning = '#f72585'
-      } else if (inference.accuracy > 5 && inference.accuracy < 12) {
-        colorrunning = '#f8961e'
+    let array_locations = []
+    for (let i in inferences) {
+      const nextIndex_: Number = +i + 1 
+      const nextIndex = nextIndex_.toString()
+
+      if(inferences[nextIndex]){
+        var from = latLng(inferences[i].lonLat[1],inferences[i].lonLat[0])
+        var to = latLng(inferences[nextIndex].lonLat[1],inferences[nextIndex].lonLat[0])
+        var dist = this.getDistance(from,to)
+        if(dist < 0.7){
+          array_locations.push([inferences[i].lonLat[1], inferences[i].lonLat[0]])
+        }else{
+          array_locations.push([inferences[i].lonLat[1], inferences[i].lonLat[0]])
+          if(array_locations.length > 3){
+             this.updateMarkLocations(array_locations);
+          }
+          array_locations = []
+          dist = 0
+        }
       }
-      const m = new Circle([inference.lonLat[1], inference.lonLat[0]], {
-        radius: 10,
-        color: colorrunning,
-        fillColor: colorrunning,
-        fillOpacity: 1,
-      })
-      m.addTo(this.inferenceMarkers).bindPopup(
-        `${inference.name} (${Math.round((inference.confidence || 0) * 100)}%)`
-      )
     }
+
+  }
+
+  updateMarkLocations(locations){
+    const RunningTrajectory = new Polyline(locations, {
+      color: 'red',
+      weight: 4,
+      opacity: 1,
+      smoothFactor: 1
+    });
+
+    RunningTrajectory.addTo(this.inferenceMarkers);
+
+  }
+  getDistance(from, to)
+  {
+    return (from.distanceTo(to)).toFixed(0)/1000;
   }
 
   private async showErrorToast(message: string) {

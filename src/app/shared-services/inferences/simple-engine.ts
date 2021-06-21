@@ -253,14 +253,16 @@ export class SimpleEngine implements IInferenceEngine {
     let listTodelete = []
     
     for (var i of trajectory.speed) {
-      if (i < 2.5 || i > 9) {
+      if (i < 1.5 || i > 9) {
        listTodelete.push(x) ;x += 1}
       else{
         x += 1
       } 
       }
     
-      for (var index of listTodelete){trajectory.speed.splice(index-n,1) ;trajectory.coordinates.splice(index-n,1); n+=1
-      }; console.log(trajectory.speed)
+      for (var index of listTodelete){
+        trajectory.speed.splice(index-n,1) ;
+        trajectory.coordinates.splice(index-n,1); n+=1
+      }; 
   }
 }
