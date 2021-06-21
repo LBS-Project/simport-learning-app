@@ -171,7 +171,7 @@ export class MapPage implements OnInit, OnDestroy {
         return await this.showErrorToast(`Trajectory couldn't be analyzed`)
     }
   }
-
+  // THIS FUNCTION EXECUTE THE RUNNING INFERENCE
   async showRunInferences() {
     await this.showLoadingDialog('Loading inferences...')
     const inferenceResult = await this.inferenceService
@@ -192,7 +192,7 @@ export class MapPage implements OnInit, OnDestroy {
         return await this.showErrorToast(`Trajectory couldn't be analyzed`)
     }
   }
-
+  
   updateInferenceMarkers() {
     const inferences = this.currentInferences.filter(
       (i) =>
@@ -214,7 +214,7 @@ export class MapPage implements OnInit, OnDestroy {
     }
   }
 
-
+  // THIS FUNCTION UPDATE THE LINE REPRESENTATION IN THE MAP
   updateRunningInferenceMarkers() {
     let locations= [];
 
@@ -250,6 +250,7 @@ export class MapPage implements OnInit, OnDestroy {
 
   }
 
+  // Create the lines based on the grouped points.
   updateMarkLocations(locations){
     const RunningTrajectory = new Polyline(locations, {
       color: 'red',
@@ -261,6 +262,8 @@ export class MapPage implements OnInit, OnDestroy {
     RunningTrajectory.addTo(this.inferenceMarkers);
 
   }
+
+  //  Calculate the distances between two points
   getDistance(from, to)
   {
     return (from.distanceTo(to)).toFixed(0)/1000;
